@@ -1,0 +1,67 @@
+Step 1:
+First, you need to install Django and Django channels. You can install them using pip:
+pip install Django==3.2.9
+pip install channels==3.0.4
+----------------------------------
+Step 2:
+To modify the bot to present three buttons to the user instead of text input, you need to modify the views.py file. Here's an example code snippet that you can use:
+
+css
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import CallbackQueryHandler
+
+def joke_options(update, context):
+    keyboard = [
+        [
+            InlineKeyboardButton("Stupid", callback_data='stupid'),
+            InlineKeyboardButton("Fat", callback_data='fat'),
+            InlineKeyboardButton("Dumb", callback_data='dumb'),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text('Please choose an option:', reply_markup=reply_markup)
+
+def show_joke(update, context):
+    query = update.callback_query
+    option = query.data
+    jokes = {
+        'stupid': 'Why did the tomato turn red? Because it saw the salad dressing!',
+        'fat': 'Why did the chicken cross the playground? To get to the other slide!',
+        'dumb': 'Why did the hipster burn his tongue? He drank his coffee before it was cool!'
+    }
+    query.edit_message_text(text=jokes[option])
+
+--------------------------------------------------------------------------------
+Step 3:
+To record the number of calls to each of the buttons and store them in a PostgreSQL database, you need to create a model in the models.py file. Here's an example code snippet:
+
+python
+from django.db import models
+from django.contrib.auth.models import User
+
+class Button(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    option = models.CharField(max_length=10)
+    count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.option} ({self.count})"
+
+
+
+This creates a Button model that has fields for the user who clicked the button, the option that was selected, and the number of times the button was clicked (count).
+
+To update the count every time a button is clicked, you need to modify the show_joke() function in the views.py file:
+
+python
+from django.contrib.auth.decorators import login_required
+from .models import Button
+
+@login_required
+def show_joke(update, context):
+    query = update.callback_query
+    option = query.data
+    jokes = {
+        'stupid': 'Why did the tomato turn red? Because it saw the salad dressing!',
+        'fat': 'Why did the chicken cross the playground? To get to the other slide!',
+        'dumb': 'Why did the hipster burn
